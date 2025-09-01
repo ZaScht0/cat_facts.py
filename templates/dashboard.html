@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>Marketing AI Agent CRM</h1>
+            <div class="user-info">
+                <span>Привет, {{ user.username }}!</span>
+                <a href="/logout" class="btn-logout">Выйти</a>
+            </div>
+        </header>
+        
+        <main class="dashboard-main">
+            <aside class="sidebar">
+                <h2>Типы чатов</h2>
+                <ul class="chat-types">
+                    <li><a href="#" onclick="openCreateChatModal('analysis')">📊 Анализ данных</a></li>
+                    <li><a href="#" onclick="openCreateChatModal('strategy')">🎯 Стратегия</a></li>
+                    <li><a href="#" onclick="openCreateChatModal('content')">📝 Контент</a></li>
+                    <li><a href="#" onclick="openCreateChatModal('ads')">📢 Реклама</a></li>
+                    <li><a href="#" onclick="openCreateChatModal('seo')">🔍 SEO</a></li>
+                    <li><a href="#" onclick="openCreateChatModal('social')">📱 Соцсети</a></li>
+                </ul>
+                
+                <button class="btn-primary" onclick="openCreateChatModal()">+ Создать новый чат</button>
+            </aside>
+            
+            <section class="main-content">
+                <h2>Ваши чаты</h2>
+                <div class="chats-grid">
+                    {% if chats %}
+                        {% for chat in chats %}
+                            <div class="chat-card" onclick="openChat({{ chat.id }})">
+                                <div class="chat-icon">
+                                    {% if chat.chat_type == 'analysis' %}
+                                        📊
+                                    {% elif chat.chat_type == 'strategy' %}
+                                        🎯
+                                    {% elif chat.chat_type == 'content' %}
+                                        📝
+                                    {% elif chat.chat_type == 'ads' %}
+                                        📢
+                                    {% elif chat.chat_type == 'seo' %}
+                                        🔍
+                                    {% elif chat.chat_type == 'social' %}
+                                        📱
+                                    {% else %}
+                                        💬
+                                    {% endif %}
+                                </div>
+                                <h3>{{ chat.name }}</h3>
+                                <p class="chat-type">
+                                    {% if chat.chat_type == 'analysis' %}
+                                        Анализ данных
+                                    {% elif chat.chat_type == 'strategy' %}
+                                        Стратегия
+                                    {% elif chat.chat_type == 'content' %}
+                                        Контент
+                                    {% elif chat.chat_type == 'ads' %}
+                                        Реклама
+                                    {% elif chat.chat_type == 'seo' %}
+                                        SEO
+                                    {% elif chat.chat_type == 'social' %}
+                                        Соцсети
+                                    {% else %}
+                                        Общий
+                                    {% endif %}
+                                </p>
+                                <p class="chat-date">{{ chat.created_at }}</p>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="no-chats">У вас пока нет чатов. Создайте первый!</p>
+                    {% endif %}
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- Модальное окно создания чата -->
+    <div id="createChatModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCreateChatModal()">&times;</span>
+            <h2>Создать новый чат</h2>
+            <form id="createChatForm">
+                <div class="form-group">
+                    <label for="chatName">Название чата</label>
+                    <input type="text" id="chatName" name="name" required placeholder="Например: Анализ кампании Q1">
+                </div>
+                <div class="form-group">
+                    <label for="chatType">Тип чата</label>
+                    <select id="chatType" name="chat_type" required>
+                        <option value="">Выберите тип</option>
+                        <option value="analysis">📊 Анализ данных</option>
+                        <option value="strategy">🎯 Стратегия</option>
+                        <option value="content">📝 Контент</option>
+                        <option value="ads">📢 Реклама</option>
+                        <option value="seo">🔍 SEO</option>
+                        <option value="social">📱 Соцсети</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">Создать чат</button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

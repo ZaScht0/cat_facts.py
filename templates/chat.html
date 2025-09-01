@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="/static/css/chat.css">
+</head>
+<body>
+    <div class="chat-container">
+        <header class="chat-header">
+            <div class="header-left">
+                <a href="/dashboard" class="back-button">← Назад</a>
+                <h1>{{ chat_name }}</h1>
+                <span class="chat-type-badge">
+                    {% if chat_type == 'analysis' %}
+                        📊 Анализ данных
+                    {% elif chat_type == 'strategy' %}
+                        🎯 Стратегия
+                    {% elif chat_type == 'content' %}
+                        📝 Контент
+                    {% elif chat_type == 'ads' %}
+                        📢 Реклама
+                    {% elif chat_type == 'seo' %}
+                        🔍 SEO
+                    {% elif chat_type == 'social' %}
+                        📱 Соцсети
+                    {% else %}
+                        💬 Общий
+                    {% endif %}
+                </span>
+            </div>
+            <div class="header-right">
+                <span>Привет, {{ user.username }}!</span>
+                <a href="/logout" class="btn-logout">Выйти</a>
+            </div>
+        </header>
+        
+        <div class="chat-messages" id="chat-messages">
+            <!-- Сообщения будут добавляться сюда динамически -->
+            <div class="typing-indicator" id="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <input 
+                type="text" 
+                id="message-input" 
+                placeholder="Введите ваше сообщение..." 
+                autocomplete="off"
+            >
+            <button id="send-button">Отправить</button>
+        </div>
+        
+        <div class="chat-controls">
+            <button id="clear-button">Очистить историю</button>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript для работы чат-бота
+        document.addEventListener('DOMContentLoaded', function() {
+            // Получаем элементы DOM
+            const messageInput = document.getElementById('message-input');
+            const sendButton = document.getElementById('send-button');
+            const chatMessages = document.getElementById('chat-messages');
+            const clearButton = document.getElementById('clear-button');
+            const typingIndicator = document.getElementById('typing-indicator');
+
+            // ID чата
+            const chatId = {{ chat_id }};
+
+            // Функция для добавления сообщения в чат
+            function addMessage(role, content) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message');
+                messageDiv.classList.add(role === 'user' ? 'user-message' : 'bot-message');
+
+                const messageHeader = document.createElement('div');
+                messageHeader.classList.add('message-header');
+                messageHeader.textContent = role === 'user' ? 'Вы' : 'Marketing AI';
+
+                const messageContent = document.createElement('div');
+                messageContent.classList.add('message-content');
+                messageContent.textContent = content;
+
+                messageDiv.appendChild(messageHeader);
+                messageDiv.appendChild(messageContent);
+                chatMessages.appendChild(messageDiv);
+
+                // Прокручиваем к новому сообщению
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // Функция для отправки сообщения
+            async function sendMessage() {
+                const message = messageInput.value.trim();
+                if (!message) return;
+
+                // Добавляем сообщение пользователя в чат
+                addMessage('user', message);
+
+                // Очищаем поле ввода
+                messageInput.value = '';
+
+                // Показываем индикатор набора текста
+                typingIndicator.style.display = 'block';
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                // Блокируем кнопку отправки
+                sendButton.disabled = true;
+
+                try {
+                    // Отправляем запрос к серверу
+                    const response = await fetch(`/chat/${chatId}/message`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `message=${encodeURIComponent(message)}`
+                    });
+
+                    const data = await response.json();
+
+                    // Скрываем индикатор набора текста
+                    typingIndicator.style.display = 'none';
+
+                    // Добавляем ответ бота в чат
+                    addMessage('assistant', data.bot_response);
+                } catch (error) {
+                    // Скрываем индикатор набора текста
+                    typingIndicator.style.display = 'none';
+
+                    // Показываем сообщение об ошибке
+                    addMessage('assistant', 'Произошла ошибка при отправке сообщения. Попробуйте еще раз.');
+                    console.error('Ошибка:', error);
+                } finally {
+                    // Разблокируем кнопку отправки
+                    sendButton.disabled = false;
+                    messageInput.focus();
+                }
+            }
+
+            // Функция для очистки истории чата
+            async function clearHistory() {
+                if (confirm('Вы уверены, что хотите очистить историю чата?')) {
+                    try {
+                        await fetch(`/chat/${chatId}/clear`, {
+                            method: 'POST'
+                        });
+
+                        // Очищаем чат на клиенте
+                        chatMessages.innerHTML = '';
+                        typingIndicator.style.display = 'none';
+
+                        // Добавляем приветственное сообщение
+                        addWelcomeMessage();
+                    } catch (error) {
+                        console.error('Ошибка при очистке истории:', error);
+                        alert('Произошла ошибка при очистке истории');
+                    }
+                }
+            }
+
+            // Функция для добавления приветственного сообщения
+            function addWelcomeMessage() {
+                const welcomeMessages = {
+                    'analysis': 'Привет! Я ваш ИИ-ассистент по маркетинговому анализу. Расскажите, какие данные вы хотите проанализировать?',
+                    'strategy': 'Привет! Я ваш ИИ-стратег по маркетингу. Какую маркетинговую стратегию вы хотите разработать?',
+                    'content': 'Привет! Я ваш ИИ-копирайтер. Какой контент вы хотите создать?',
+                    'ads': 'Привет! Я ваш ИИ-специалист по рекламе. Какую рекламную кампанию вы хотите запустить?',
+                    'seo': 'Привет! Я ваш ИИ-SEO специалист. Что вы хотите оптимизировать?',
+                    'social': 'Привет! Я ваш ИИ-специалист по социальным сетям. Какой контент для соцсетей вы хотите создать?'
+                };
+                
+                const chatType = '{{ chat_type }}';
+                const welcomeMessage = welcomeMessages[chatType] || 'Привет! Я ваш маркетинговый ИИ-ассистент. Чем могу помочь?';
+                addMessage('assistant', welcomeMessage);
+            }
+
+            // Загружаем историю чата при загрузке страницы
+            async function loadChatHistory() {
+                try {
+                    const response = await fetch(`/chat/${chatId}/history`);
+                    const data = await response.json();
+
+                    // Добавляем сообщения из истории
+                    data.history.forEach(msg => {
+                        addMessage(msg.role, msg.content);
+                    });
+
+                    // Если история пуста, добавляем приветственное сообщение
+                    if (data.history.length === 0) {
+                        addWelcomeMessage();
+                    }
+                } catch (error) {
+                    console.error('Ошибка при загрузке истории:', error);
+                    addWelcomeMessage();
+                }
+            }
+
+            // Обработчики событий
+            sendButton.addEventListener('click', sendMessage);
+
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            clearButton.addEventListener('click', clearHistory);
+
+            // Загружаем историю чата
+            loadChatHistory();
+
+            // Устанавливаем фокус на поле ввода
+            messageInput.focus();
+        });
+    </script>
+</body>
+</html>
